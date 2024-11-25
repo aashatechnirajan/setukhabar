@@ -58,38 +58,42 @@
 
                 <div class="form-group">
                     <label for="main_logo">Main Logo</label><span style="color:red; font-size:large"> *</span>
-                    <input type="file" name="main_logo" class="form-control" id="main_logo_input"
-                        onchange="previewImage(event, 'main_logo_preview')" placeholder="Main Logo">
-                </div>
-                <img id="main_logo_preview" class="preview-image"
-                    style="max-width: 500px; max-height:500px; display: none;" />
+                    
+                    @if(isset($sitesetting) && $sitesetting->main_logo && file_exists(public_path('uploads/sitesetting/' . $sitesetting->main_logo)))
+                        <div class="mb-3">
+                            <label class="form-label">Current Logo:</label>
+                            <div>
+                                <img src="{{ asset('uploads/sitesetting/' . $sitesetting->main_logo) }}" 
+                                     alt="Current Main Logo"
+                                     style="max-width: 200px; max-height: 200px; object-fit: contain;"
+                                     class="img-thumbnail">
+                            </div>
+                        </div>
+                    @endif
 
-                    {{-- <div class="form-group">
-                        <label for="exampleInputEmail1">Main Logo</label>
-                        <input type="file" name="main_logo" class="form-control" value="{{ $sitesetting->main_logo ?? '' }}"
-                            placeholder="Main Logo">
-                    </div> --}}
-
-
-
-
-{{--
-                <div class="form-group">
-                    <label for="side_logo">Side Logo</label><span style="color:red; font-size:large"> *</span>
-                    <input type="file" name="side_logo" class="form-control" id="side_logo_input"
-                        onchange="previewImage(event, 'side_logo_preview')" placeholder="Side Logo" required>
-                </div>
-                <img id="side_logo_preview" class="preview-image"
-                    style="max-width: 500px; max-height:500px; display: none;" />
-
-
-                <div class="form-group">
-                    <label for="flag_logo">Flag Logo</label><span style="color:red; font-size:large"> *</span>
-                    <input type="file" name="flag_logo" class="form-control" id="flag_logo_input" onchange="previewImage(event, 'flag_logo_preview')" placeholder="Flag Logo" required>
+                    <div class="input-group">
+                        <input type="file" 
+                               name="main_logo" 
+                               class="form-control @error('main_logo') is-invalid @enderror" 
+                               id="main_logo_input"
+                               onchange="previewImage(event)">
                     </div>
-                <img id="flag_logo_preview" class="preview-image" style="max-width: 500px; max-height:500px; display: none;" />
+                    
+                    @error('main_logo')
+                        <span class="invalid-feedback d-block" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
 
-            </div> --}}
+                    <div class="mt-2">
+                        <img id="image_preview" 
+                             src="#" 
+                             alt="Preview" 
+                             style="max-width: 200px; max-height: 200px; display: none;"
+                             class="img-thumbnail">
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">Apply</button>
@@ -97,7 +101,6 @@
     </form>
 </div>
 @endsection
-
 <script>
     const previewImage = (event, previewId) => {
       const reader = new FileReader();

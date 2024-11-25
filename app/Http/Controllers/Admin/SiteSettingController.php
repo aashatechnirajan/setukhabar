@@ -127,11 +127,7 @@ class SiteSettingController extends Controller
 
         $siteSetting->save();
 
-        return redirect('admin/sitesettings/index');
-
-
-
-
+        return redirect('admin/sitesettings/index')->with('success', 'Site settings updated successfully!');
 
     }
 

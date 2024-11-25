@@ -3,19 +3,20 @@
 
 @section('content')
 
-@if (session('successMessage'))
-<div class="alert alert-success">
-    {!! session('successMessage') !!}
-</div>
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <strong>Success!</strong> {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 @endif
 
-@if (session('error'))
-<div class="alert alert-danger">
-    {!! session('error') !!}
-</div>
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <strong>Error!</strong> {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 @endif
 
-<!-- Content Header (Page header) -->
 
 <div class="row mb-2">
     <div class="col-sm-6">
@@ -46,7 +47,16 @@
             <td>{{ $sitesetting->title ?? '' }}</td>
             <td>{{ $sitesetting->email ?? '' }}</td>
             <td>{{ $sitesetting->phone ?? '' }}</td>
-            <td><img src="{{ asset('uploads/sitesetting/' .$sitesetting->main_logo) }}" style="width:80px; height:80px;"></td>
+            <td>
+                @if($sitesetting->main_logo && file_exists(public_path('uploads/sitesetting/' . $sitesetting->main_logo)))
+                    <img src="{{ asset('uploads/sitesetting/' . $sitesetting->main_logo) }}" 
+                         alt="Main Logo"
+                         style="width:80px; height:80px; object-fit: contain;"
+                         class="img-thumbnail">
+                @else
+                    <span class="text-muted">No logo available</span>
+                @endif
+            </td>
 
             <td>
                 {{-- <a href="/admin/sitesetting/edit/{{ $sitesetting->id }}">

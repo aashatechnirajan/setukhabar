@@ -1,10 +1,10 @@
 <section class="with_back">
 
     <div class="container">
-        <a href="{{ route('category.render', [$categories[10]->slug, $categories[10]]) }}">
+        <a href="{{ route('category.render', [$categories[9]->slug, $categories[9]]) }}">
             <p class="cat_title white_cat">
 
-                {{ $categories[10]->title }}
+                {{ $categories[9]->title }}
             </p>
         </a>
         <div class="carousel-container">

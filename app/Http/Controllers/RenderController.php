@@ -1,6 +1,8 @@
 <?php
 
+
 namespace App\Http\Controllers;
+
 
 use App\Models\Ad;
 use App\Models\Post;
@@ -13,15 +15,19 @@ use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 
 
+
+
 class RenderController extends Controller
 {
+
 
     public function processPosts($posts)
     {
         foreach ($posts as $post) {
             $images = json_decode($post->image);
 
-            $firstImagePath = isset($images[0]) ? asset('uploads/posts/' . $images[0]) : '';
+
+            $firstImagePath = isset($images[0]) ? asset('' . $images[0]) : '';
             $post->firstImagePath = $firstImagePath;
             $post->truncatedTitle = Str::substr($post->title, 0, 200);
         }
@@ -30,10 +36,12 @@ class RenderController extends Controller
     {
         // $adspop = Ad::latest()->first();
 
-                
+
+               
         $postadspop = Display::where('title', 'Post Front')->first();
         $postads = $postadspop ? $postadspop->getAds()->latest('id')->first() : null;
-        
+       
+
 
         $bottomSection = Display::where('title', 'Bottom Section')->first();
         $SportsAdSection = Display::where('title', 'Sports Section Right Side')->first();
@@ -70,6 +78,7 @@ class RenderController extends Controller
             ->orderBy('created_at', 'desc')->take(2)->get();
         $this->processPosts($mainPosts);
 
+
         $mainPostsId = $mainPosts->pluck('id')->toArray();
         $posts = Post::with(['getCategories' => function ($query) {
             $query->latest();
@@ -80,6 +89,7 @@ class RenderController extends Controller
             ->whereNotIn('id', $mainPostsId)
             ->orderBy('created_at', 'desc')->take(6)->get();
         $this->processPosts($posts);
+
 
         $postsId = $posts->pluck('id')->toArray();
         $postsOne = Post::with('getCategories')
@@ -101,16 +111,19 @@ class RenderController extends Controller
             })->orderBy('created_at', 'desc')->take(4)->get();
         $this->processPosts($coverimages);
 
+
         $mukhyasection = Section::where('title', 'Mukhya Samachar')->first();
         $mukhyaNews = Post::whereHas('getSections', function ($q) use ($mukhyasection) {
             $q->where('section_id', $mukhyasection->id);
         })->latest()->get()->take(8);
+
 
         $breakingsection = Section::where('title', 'Breaking News')->first();
         $breakingNews = Post::whereHas('getSections', function ($q) use ($breakingsection) {
             $q->where('section_id', $breakingsection->id);
         })->latest()->get()->take(7);
         $this->processPosts($breakingNews);
+
 
         $seventhRowOne = Post::with(['getCategories' => function ($query) {
             $query->latest();
@@ -120,6 +133,7 @@ class RenderController extends Controller
             })->orderBy('created_at', 'desc')->latest()->take(8)->get();
         $this->processPosts($seventhRowOne);
 
+
         $eighthRow = Post::with(['getCategories' => function ($query) {
             $query->latest();
         }])
@@ -128,6 +142,7 @@ class RenderController extends Controller
             })->orderBy('created_at', 'desc')->latest()->take(4)->get();
         $this->processPosts($eighthRow);
 
+
         $ninthColumnOne = Post::with(['getCategories' => function ($query) {
             $query->latest();
         }])
@@ -135,6 +150,8 @@ class RenderController extends Controller
                 $query->where('category_id', 4);
             })->orderBy('created_at', 'desc')->latest()->take(6)->get();
         $this->processPosts($ninthColumnOne);
+
+
 
 
         $ninthColumnTwo = Post::with(['getCategories' => function ($query) {
@@ -149,12 +166,16 @@ class RenderController extends Controller
         $this->processPosts($ninthColumnTwo);
         // END OF MIDDLE PART-----------------------------------------------------------------------------------
 
+
         // RIGHT SIDE------------------------------------------------------------------------------------------
+
 
         $ninthColumnOneIds = $ninthColumnOne->pluck('id')->toArray();
         $ninthColumnTwoIds = $ninthColumnTwo->pluck('id')->toArray();
 
+
         $excludedIds = array_merge($ninthColumnOneIds, $ninthColumnTwoIds);
+
 
         $ninthColumnThree = Post::with(['getCategories' => function ($query) {
             $query->latest();
@@ -169,29 +190,39 @@ class RenderController extends Controller
             ->get();
 
 
+
+
         $trendingPosts = Post::orderBy('views', 'desc')->take(4)->get();
         $this->processPosts($trendingPosts);
 
 
+
+
         $sharedPosts = Post::orderBy('shares', 'desc')->take(4)->get();
         $this->processPosts($sharedPosts);
+
 
         $relatedPosts = Post::orderByRaw('LENGTH(tags) - LENGTH(REPLACE(tags, ",", "")) + 1 DESC')
             ->limit(4)
             ->get();
         $this->processPosts($relatedPosts);
 
+
         $tagposts = Post::all();
         $uniqueTags = [];
+
 
         foreach ($tagposts as $post) {
             $tags = explode(',', $post->tags);
             $uniqueTags = array_merge($uniqueTags, $tags);
         }
 
+
         $uniqueTags = array_unique($uniqueTags);
 
+
         return view('portal.render_categories', [
+
 
             'sitesetting' => $sitesetting,
             'categories' => $categories,
@@ -223,23 +254,32 @@ class RenderController extends Controller
             // 'adspop' => $adspop,
             'postads' => $postads,
 
+
         ]);
     }
 
 
+
+
    
 
+
     public function incrementShare($id){
-        
+       
+
+
 
 
         //$postId = $request->input('postId');
         // Increment the share count in the "shares" table
         Post::where('id', $id)->increment('shares');
 
+
         // return response()->json(['message' => 'Share count updated successfully']);
 
+
 //         $post = Post::find($id);
+
 
 //         if ($post) {
 //             $post->increment('shares');
@@ -249,8 +289,11 @@ class RenderController extends Controller
     }
 
 
+
+
     public function renderPost($slug, $id, Request $request)
     {
+
 
         $slug = $request->input('slug');
         // $adspop = Ad::latest()->first();
@@ -259,15 +302,22 @@ class RenderController extends Controller
         $posts = Post::all();
         $post = Post::with('getCategories')->findOrfail($id);
         $images = json_decode($post->image);
-        $firstImagePath = isset($images[0]) ? asset('uploads/posts/' . $images[0]) : '';
+        $firstImagePath = isset($images[0]) ? asset('' . $images[0]) : '';
         $post->firstImagePath = $firstImagePath;
         $post->increment('views');
 
-        
+
+       
         // $post->increment('shares');
 
 
+
+
      
+
+
+
+
 
 
 
@@ -278,6 +328,7 @@ class RenderController extends Controller
             $q->where('section_id', $mukhyasection->id);
         })->latest()->get()->take(5)->except($post->id);
 
+
         $afternavAdSection = Display::where('title', 'After Navbar Section')->first();
         $afterNavAd = $afternavAdSection ? $afternavAdSection->getAds()->latest('id')->first() : null;
         $bottomSection = Display::where('title', 'Bottom Section')->first();
@@ -286,15 +337,16 @@ class RenderController extends Controller
         $afterStrangeWorldAd = $afterStrangeWorldSection ? $afterStrangeWorldSection->getAds()->latest('id')->first() : null;
         $afterMainNewsTitle = Display::where('title', 'After Main News Title')->first();
         $afterMainNewstitleAd = $afterMainNewsTitle ? $afterMainNewsTitle->getAds()->latest('id')->first() : null;
-        
+       
         $postadspop = Display::where('title', 'Post Front')->first();
         $postads = $postadspop ? $postadspop->getAds()->latest('id')->first() : null;
-        
+       
         // $strippedContent = preg_replace('/<(?!p\b)[^>]*>/', '', $post->content);
         // $strippedContent = preg_replace('/<(?!p\b|iframe\b)[^>]*>/', '', $post->content);
         $strippedContent = preg_replace('/<p>(\s*<iframe[^>]*><\/iframe>\s*)<\/p>/', '$1', $post->content);
-        
+       
         $currentPostTags = $post->tags;
+
 
         $tagPosts = Post::where('id', '!=', $id)
             ->where(function ($query) use ($currentPostTags) {
@@ -305,6 +357,7 @@ class RenderController extends Controller
             })
             ->limit(3)
             ->get();
+
 
         $similarPosts = Post::whereHas('getCategories', function ($query) use ($id) {
             $query->whereIn('id', function ($subQuery) use ($id) {
@@ -317,17 +370,23 @@ class RenderController extends Controller
             ->limit(5)
             ->get();
 
+
         $trendingPosts = Post::orderBy('views', 'desc')->take(4)->get();
         $this->processPosts($trendingPosts);
+
+
 
 
         $sharedPosts = Post::orderBy('shares', 'desc')->take(4)->get();
         $this->processPosts($sharedPosts);
 
+
         $relatedPosts = Post::orderByRaw('LENGTH(tags) - LENGTH(REPLACE(tags, ",", "")) + 1 DESC')
             ->limit(4)
             ->get();
         $this->processPosts($relatedPosts);
+
+
 
 
 // For Sharing
@@ -337,10 +396,10 @@ class RenderController extends Controller
         $ogDescription = strip_tags($post->content);
         $ogImage = $firstImagePath;
         $ogUrl = route('post.render', ['slug' => $slug, 'id' => $id]);
-    
-    
+   
+   
  
-    
+   
         $shareComponent = \Share::page(
             $request->fullUrl(),
             $post->title
@@ -350,6 +409,7 @@ class RenderController extends Controller
          ->telegram()
          ->whatsapp()
          ->reddit();
+
 
         return view('portal.render_posts', [
             'post' => $post,
@@ -374,13 +434,18 @@ class RenderController extends Controller
             'ogUrl' => $ogUrl,
             'shareComponent' => $shareComponent,
 
+
             'postads' => $postads,
+
 
            
 
 
+
+
         ]);
     }
+
 
     public function renderTags(Request $request)
     {
@@ -399,6 +464,7 @@ class RenderController extends Controller
             ->limit(4)
             ->get();
 
+
         return view('portal.render_tags', compact('sitesetting', 'categories', 'posts', 'uniqueTags', 'tag', 'trendingPosts', 'sharedPosts', 'relatedPosts', 'afterNavAd'));
     }
 
@@ -406,8 +472,14 @@ class RenderController extends Controller
 
 
 
+
+
+
+
+
     public function loadMore(Request $request)
     {
+
 
         $slug = $request->input('slug');
         $id = $request->input('id');
@@ -427,23 +499,30 @@ class RenderController extends Controller
             ->limit($limit)
             ->get();
 
+
         // Return the partial view with the loaded posts
         return view('portal.render_posts_partial', ['relatedPosts' => $relatedPosts]);
     }
 
 
+
+
     public function renderSearch(Request $request)
     {
+
 
         $adspop = Ad::latest()->first();
         $afternavAdSection = Display::where('title', 'After Navbar Section')->first();
         $afterNavAd = $afternavAdSection ? $afternavAdSection->getAds()->latest('id')->first() : null;
 
+
         $afterMainNewsTitle = Display::where('title', 'After Main News Title')->first();
         $afterMainNewstitleAd = $afterMainNewsTitle ? $afterMainNewsTitle->getAds()->latest('id')->first() : null;
 
+
         $bottomSection = Display::where('title', 'Bottom Section')->first();
         $bottomAd = $bottomSection ? $bottomSection->getAds()->latest('id')->first() : null;
+
 
         $this->validate($request, [
             'input' => 'required'
@@ -453,11 +532,13 @@ class RenderController extends Controller
         $sharedPosts = Post::orderBy('shares', 'desc')->take(4)->get();
         $this->processPosts($sharedPosts);
 
+
         $relatedPosts = Post::orderByRaw('LENGTH(tags) - LENGTH(REPLACE(tags, ",", "")) + 1 DESC')
             ->limit(4)
             ->get();
         $this->processPosts($relatedPosts);
         $id = $request->input('post_id');
+
 
         // Retrieve similar posts based on categories
         $similarPosts = Post::whereHas('getCategories', function ($query) use ($id) {
@@ -471,7 +552,9 @@ class RenderController extends Controller
             ->limit(7)
             ->get();
 
+
         $currentPostTags = $request->input('post_tags');
+
 
         // Fetch posts with matching tags
         $tagPosts = Post::where('id', '!=', $id)
@@ -485,10 +568,13 @@ class RenderController extends Controller
             ->get();
 
 
+
+
         $mukhyasection = Section::where('title', 'Mukhya Samachar')->first();
         $mukhyaNews = Post::whereHas('getSections', function ($q) use ($mukhyasection) {
             $q->where('section_id', $mukhyasection->id);
         })->latest()->get()->take(5);
+
 
         $posts = Post::where('title', 'like', '%' . "$request->input" . '%')
             ->orWhere('description', 'like', '%' . "$request->input" . '%')
@@ -501,10 +587,12 @@ class RenderController extends Controller
         $categories = Category::all();
         $uniqueTags = [];
 
+
         foreach ($posts as $post) {
             $tags = explode(',', $post->tags);
             $uniqueTags = array_merge($uniqueTags, $tags);
         }
+
 
         $uniqueTags = array_unique($uniqueTags);
         return view('portal.render-search', [
@@ -523,8 +611,14 @@ class RenderController extends Controller
             'afterMainNewstitleAd' => $afterMainNewstitleAd,
             'adspop' => $adspop,
 
+
         ]);
     }
+
+
+
+
+
 
 
 
@@ -541,8 +635,10 @@ class RenderController extends Controller
             'collectedPosts' => $collectedPosts,
             'navAd' => $navAd,
 
+
         ]);
     }
+
 
     public function renderSports()
     {
@@ -555,14 +651,17 @@ class RenderController extends Controller
         $navAdSection = Display::where('title', 'Below Title')->first();
         $navAd = $navAdSection ? $navAdSection->getAds()->latest('id')->first() : null;
 
+
         return view('portal.render_sports', [
             'sportsSection' => $sportsSection,
             'sportsNews' => $sportsNews,
             'sitesetting' => $sitesetting,
             'navAd' => $navAd,
 
+
         ]);
     }
+
 
     public function renderBichar()
     {
@@ -574,6 +673,7 @@ class RenderController extends Controller
         $navAdSection = Display::where('title', 'Below Title')->first();
         $navAd = $navAdSection ? $navAdSection->getAds()->latest('id')->first() : null;
 
+
         return view('portal.render_bichar', [
             'bichaarsection' => $bichaarsection,
             'BichaarNews' => $BichaarNews,
@@ -581,6 +681,7 @@ class RenderController extends Controller
             'navAd' => $navAd,
         ]);
     }
+
 
     public function renderWorld()
     {
@@ -592,6 +693,7 @@ class RenderController extends Controller
         $navAdSection = Display::where('title', 'Below Title')->first();
         $navAd = $navAdSection ? $navAdSection->getAds()->latest('id')->first() : null;
 
+
         return view('portal.render_world', [
             'worldSection' => $worldSection,
             'worldNews' => $worldNews,
@@ -599,6 +701,7 @@ class RenderController extends Controller
             'navAd' => $navAd,
         ]);
     }
+
 
     public function renderRomanchakNews()
     {
@@ -610,6 +713,7 @@ class RenderController extends Controller
         $navAdSection = Display::where('title', 'Below Title')->first();
         $navAd = $navAdSection ? $navAdSection->getAds()->latest('id')->first() : null;
 
+
         return view('portal.render_romanchak_news', [
             'romanchaksection' => $romanchaksection,
             'romanchaknews' => $romanchaknews,
@@ -617,6 +721,7 @@ class RenderController extends Controller
             'navAd' => $navAd,
         ]);
     }
+
 
     public function renderArtha()
     {
@@ -629,6 +734,7 @@ class RenderController extends Controller
         $navAdSection = Display::where('title', 'Below Title')->first();
         $navAd = $navAdSection ? $navAdSection->getAds()->latest('id')->first() : null;
 
+
         return view('portal.render_artha_news', [
             'arthaSection' => $arthaSection,
             'arthaNews' => $arthaNews,
@@ -636,6 +742,7 @@ class RenderController extends Controller
             'navAd' => $navAd,
         ]);
     }
+
 
     public function renderInformationTechnology()
     {
@@ -648,6 +755,7 @@ class RenderController extends Controller
         $navAdSection = Display::where('title', 'Below Title')->first();
         $navAd = $navAdSection ? $navAdSection->getAds()->latest('id')->first() : null;
 
+
         return view('portal.render_information_technology', [
             'itsection' => $itsection,
             'itnews' => $itnews,
@@ -656,11 +764,13 @@ class RenderController extends Controller
         ]);
     }
 
+
     public function photofeature($id)
     {
         $sitesetting = SiteSetting::first();
         $photofeature = Post::find($id);
         $categories = Category::all();
+
 
         $afternavAdSection = Display::where('title', 'After Navbar Section')->first();
         $afterNavAd = Ad::whereHas('getDisplays', function ($q) use ($afternavAdSection) {
@@ -685,6 +795,7 @@ class RenderController extends Controller
             ->get();
         $currentPostTags = $post->tags;
 
+
         $tagPosts = Post::where('id', '!=', $id)
             ->where(function ($query) use ($currentPostTags) {
                 $query->where('tags', 'LIKE', '%' . $currentPostTags . '%')
@@ -695,6 +806,7 @@ class RenderController extends Controller
             ->limit(7)
             ->get();
 
+
         $bottomSection = Display::where('title', 'Bottom Section')->first();
         $bottomAd = $bottomSection ? $bottomSection->getAds()->latest('id')->first() : null;
         $trendingPosts = Post::orderBy('views', 'desc')->take(4)->get();
@@ -703,7 +815,9 @@ class RenderController extends Controller
             ->limit(4)
             ->get();
 
+
         return view('portal.render_photo_feature', [
+
 
             'sitesetting' => $sitesetting,
             'photofeature' => $photofeature,
@@ -721,6 +835,11 @@ class RenderController extends Controller
             'relatedPosts' => $relatedPosts,
 
 
+
+
         ]);
     }
 }
+
+
+
