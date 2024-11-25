@@ -1,6 +1,4 @@
 <?php
-
-
 namespace App\Http\Controllers\Admin;
 
 
@@ -29,19 +27,9 @@ class PostController extends Controller
     public function index()
     {
         abort_unless(Gate::allows('hasPermission', 'view_posts'), 403);
-
-
-
-
         $posts = Post::with('getCategories', 'getSections')->latest()->paginate(20);
-
-
         return view('admin.post.index', ['posts' => $posts]);
     }
-
-
-
-
 
 
 
@@ -56,13 +44,31 @@ class PostController extends Controller
         abort_unless(Gate::allows('hasPermission', 'create_posts'), 403);
 
 
+
+
+
+
+
+
         $categories = Category::all();
         $sections = Section::all();
         return view('admin.post.create', ['categories' => $categories, 'sections' => $sections]);
     }
 
 
+
+
+
+
+
+
     // FUNCTION TO CONVERT IMAGE
+
+
+
+
+
+
 
 
     private function convertImage($image)
@@ -113,8 +119,6 @@ class PostController extends Controller
         if (empty($tags)) {
             return '';
         }
-
-
         $tagsArray = explode(',', $tags);
         $formattedTags = [];
 
@@ -122,43 +126,57 @@ class PostController extends Controller
         foreach ($tagsArray as $tag) {
             $formattedTags[] = '#' . trim($tag);
         }
-
-
         return implode(',', $formattedTags);
     }
-
-
-
-
 
 
     public function store(Request $request)
 {
     abort_unless(Gate::allows('hasPermission', 'create_posts'), 403);
 
+
+    $messages = [
+        'image.*.max' => 'Image size cannot exceed 6MB. Please upload a smaller image.',
+        'image.*.mimes' => 'Only jpeg, png, jpg, and gif images are allowed.',
+        'image.*.image' => 'The uploaded file must be an image.'
+    ];
+
+
     $this->validate($request, [
         'title' => 'required',
         'description' => 'required',
         'content' => 'required',
-        'image.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:6000', 
+        'image.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:6000', // Maximum file size of 6 MB
         'categories' => 'required',
         'sections' => 'sometimes',
         'reporter_name' => 'nullable',
     ]);
+
+
+
 
     try {
         $post = new Post;
         $post->title = $request->title;
         $post->description = $request->description;
 
+
+
+
         // Clean and assign content
         $content = $request->content;
         $strippedContent = preg_replace('/<(?!p\b)[^>]*>/', '', $content);
         $post->content = $strippedContent;
 
+
+
+
         // Process tags
         $post->tags = $this->processTags($request->tags);
         $post->slug = Str::slug(substr($request->title, 0, 500));
+
+
+
 
         // Process images
         $uploadedImages = [];
@@ -170,24 +188,42 @@ class PostController extends Controller
             }
         }
 
+
+
+
         // Save the images as JSON in the `image` column
         $post->image = json_encode($uploadedImages);
+
+
+
 
         // Other fields
         $post->reporter_name = $request->reporter_name;
 
+
+
+
         // Save the post
         $post->save();
+
+
+
 
         // Sync categories and sections
         $post->getCategories()->sync($request->categories);
         $post->getSections()->sync($request->sections);
 
+
+
+
         return redirect()->route('admin.posts.index')->with('success', 'Post created successfully.');
-    } catch (Exception $e) {
+   } catch (Exception $e) {
         return redirect()->back()->withInput()->with('errorMessage', 'Error creating post: ' . $e->getMessage());
     }
 }
+
+
+
 
    
    
@@ -202,6 +238,12 @@ class PostController extends Controller
     }
 
 
+
+
+
+
+
+
     /**
      * Show the form for editing the specified resource.
      *
@@ -211,13 +253,17 @@ class PostController extends Controller
     public function edit($id)
     {
         abort_unless(Gate::allows('hasPermission', 'update_posts'), 403);
-
-
         $post = Post::find($id);
         $categories = Category::all();
         $sections = Section::all();
         return view('admin.post.update', ['post' => $post, 'categories' => $categories, 'sections' => $sections]);
     }
+
+
+
+
+
+
 
 
     /**
@@ -230,6 +276,12 @@ class PostController extends Controller
     public function update(Request $request)
     {
         abort_unless(Gate::allows('hasPermission', 'update_posts'), 403);
+        $messages = [
+            'image.*.max' => 'Image size cannot exceed 6MB. Please upload a smaller image.',
+            'image.*.mimes' => 'Only jpeg, png, jpg, and gif images are allowed.',
+            'image.*.image' => 'The uploaded file must be an image.'
+        ];
+
 
         $this->validate($request, [
             'id' => 'required',
@@ -241,9 +293,10 @@ class PostController extends Controller
             'repoter_name' => 'nullable',
         ]);
 
+
         try {
             $post = Post::find($request->id);
-            
+           
             // Process images
             if ($request->hasFile('image')) {
                 $uploadedImages = [];
@@ -252,10 +305,13 @@ class PostController extends Controller
                     $file->move(public_path('uploads/post'), $imageName);
                     $uploadedImages[] = 'uploads/post/' . $imageName;
                 }
-                
+               
                 // Update the images array in the database
                 $post->image = json_encode($uploadedImages);
             }
+
+
+
 
             $post->title = $request->title;
             $post->description = $request->description;
@@ -263,6 +319,9 @@ class PostController extends Controller
             $post->tags = $this->processTags($request->tags);
             $post->slug = Str::slug(substr($request->title, 0, 500));
             $post->reporter_name = $request->reporter_name;
+
+
+
 
             if ($post->save()) {
                 $post->getCategories()->sync($request->categories);
@@ -277,6 +336,9 @@ class PostController extends Controller
         }
     }
 
+
+
+
     /**
      * Remove the specified resource from storage.
      *
@@ -286,17 +348,11 @@ class PostController extends Controller
     public function destroy($id)
     {
         abort_unless(Gate::allows('hasPermission', 'delete_posts'), 403);
-
-
         try {
             $post = Post::find($id);
             if ($post->delete()) {
-
-
                 $post->getCategories()->detach();
                 $post->getSections()->detach();
-
-
                 UtilityFunctions::createHistory('Deleted Ad with Id ' . $post->id . ' and title ' . $post->title, 1);
                 return redirect()->route('admin.posts.index')->with(['successMessage' => 'Success !! Post Deleted']);
             } else {
@@ -312,19 +368,10 @@ class PostController extends Controller
     {
 
 
-
-
-
-
         $fileName = $request->file('file')->getClientOriginalName();
         $path = $request->file('file')->storeAs('uploads/tiny', $fileName, 'public');
         return response()->json(['location' => "/storage/$path"]);
-
-
         $imgpath = request()->file('file')->store('uploads/tiny/', 'public');
         return response()->json(['location' => "/storage/$imgpath"]);
     }
 }
-
-
-
