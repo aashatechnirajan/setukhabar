@@ -53,7 +53,7 @@ class AdController extends Controller
         $this->validate($request, [
             'title' => 'string',
             'url' => 'string',
-            'image' => 'image|mimes:jpg,png,jpeg,gif,svg',
+            'image' => 'image|mimes:jpg,png,jpeg,gif,svg,webp',
             'displays' => 'sometimes',
         ]);
         try {
@@ -114,7 +114,7 @@ class AdController extends Controller
             'id' => 'required',
             'title' => 'required',
             'url' => 'required',
-            'image' => 'image|mimes:jpg,png,jpeg,gif,svg|max:1536',
+            'image' => 'image|mimes:jpg,png,jpeg,gif,svg,webp|max:1536',
         ]);
         try {
             $ad = Ad::find($request->id);

@@ -38,33 +38,20 @@ class PostController extends Controller
     public function create()
     {
         abort_unless(Gate::allows('hasPermission', 'create_posts'), 403);
-
-
-
-
         $categories = Category::all();
         $sections = Section::all();
         return view('admin.post.create', ['categories' => $categories, 'sections' => $sections]);
     }
 
 
-
-
     // FUNCTION TO CONVERT IMAGE
-
-
-
-
     private function convertImage($image)
     {
-        // Generate a unique file name
         $fileName = uniqid() . '.webp';
-        $imagePath = 'uploads/' . $fileName; // Save inside storage/app/uploads
+        $imagePath = 'uploads/' . $fileName;
    
         try {
-            // Use the Storage facade to store the image
             $img = Image::make($image->getRealPath());
-            // Save the image in storage/app/uploads directory
             Storage::disk('local')->put($imagePath, (string) $img->encode('webp', 70));
    
             return $imagePath;
@@ -79,16 +66,14 @@ class PostController extends Controller
         $news = [];
    
         foreach ($images as $image) {
-            // Generate a unique image name
             $image_name = hexdec(uniqid()) . '-' . time() . '.' . $ext;
-            $imagePath = 'uploads/' . $image_name; // Save inside storage/app/uploads
+            $imagePath = 'uploads/' . $image_name;
    
             try {
-                // Convert the image to the correct format and save it in the storage folder
                 $image_convert = Image::make($image->getRealPath());
                 Storage::disk('local')->put($imagePath, (string) $image_convert->encode($ext, 50));
    
-                $news[] = $imagePath; // Store relative path for DB
+                $news[] = $imagePath;
             } catch (\Exception $e) {
                 return $e->getMessage();
             }
@@ -126,7 +111,7 @@ class PostController extends Controller
         'title' => 'required',
         'description' => 'required',
         'content' => 'required',
-        'image.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:6000', // Maximum file size of 6 MB
+        'image.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:6000', 
         'categories' => 'required',
         'sections' => 'sometimes',
         'reporter_name' => 'nullable',
@@ -138,19 +123,13 @@ class PostController extends Controller
         $post->title = $request->title;
         $post->description = $request->description;
 
-
-        // Clean and assign content
         $content = $request->content;
         $strippedContent = preg_replace('/<(?!p\b)[^>]*>/', '', $content);
         $post->content = $strippedContent;
 
-
-        // Process tags
         $post->tags = $this->processTags($request->tags);
         $post->slug = Str::slug(substr($request->title, 0, 500));
 
-
-        // Process images
         $uploadedImages = [];
         if ($request->hasFile('image')) {
             foreach ($request->file('image') as $file) {
@@ -159,21 +138,9 @@ class PostController extends Controller
                 $uploadedImages[] = 'uploads/post/' . $imageName;
             }
         }
-
-
-        // Save the images as JSON in the `image` column
         $post->image = json_encode($uploadedImages);
-
-
-        // Other fields
         $post->reporter_name = $request->reporter_name;
-
-
-        // Save the post
         $post->save();
-
-
-        // Sync categories and sections
         $post->getCategories()->sync($request->categories);
         $post->getSections()->sync($request->sections);
 
@@ -183,22 +150,6 @@ class PostController extends Controller
         return redirect()->back()->withInput()->with('errorMessage', 'Error creating post: ' . $e->getMessage());
     }
 }
-
-
-   
-   
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Post  $post
-     * @return \Illuminate\Http\Response
-     */
-    public function show($slug)
-    {
-    }
-
-
-
 
     /**
      * Show the form for editing the specified resource.
@@ -214,8 +165,6 @@ class PostController extends Controller
         $sections = Section::all();
         return view('admin.post.update', ['post' => $post, 'categories' => $categories, 'sections' => $sections]);
     }
-
-
 
 
     /**
@@ -239,15 +188,14 @@ class PostController extends Controller
             'title' => 'required',
             'description' => 'required',
             'content' => 'required',
-            'image.*' => 'image|mimes:jpeg,png,jpg,gif|max:6000',
+            'image.*' => 'image|mimes:jpeg,png,jpg,gif,webp|max:6000',
             'categories' => 'required',
             'repoter_name' => 'nullable',
         ]);
 
         try {
             $post = Post::find($request->id);
-           
-            // Process images
+
             if ($request->hasFile('image')) {
                 $uploadedImages = [];
                 foreach ($request->file('image') as $file) {
@@ -255,8 +203,7 @@ class PostController extends Controller
                     $file->move(public_path('uploads/post'), $imageName);
                     $uploadedImages[] = 'uploads/post/' . $imageName;
                 }
-               
-                // Update the images array in the database
+
                 $post->image = json_encode($uploadedImages);
             }
 

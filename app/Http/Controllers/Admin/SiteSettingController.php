@@ -28,40 +28,6 @@ class SiteSettingController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-
-
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\SiteSetting  $siteSetting
-     * @return \Illuminate\Http\Response
-     */
-    public function show(SiteSetting $siteSetting)
-    {
-        //
-    }
-
-    /**
      * Show the form for editing the specified resource.
      *
      * @param  \App\Models\SiteSetting  $siteSetting
@@ -93,13 +59,11 @@ class SiteSettingController extends Controller
             'phone' => 'required',
             'email' => 'required|email',
             'location' => 'required',
-            'facebook' => 'url',
-            'linkedin' => 'url',
-            'twitter' => 'url',
-            'pinterest' => 'url',
-            'main_logo'=>'required|image|mimes:jpg,png,jpeg,gif,svg|max:5120',
-            // 'side_logo' => 'image|mimes:jpg,png,jpeg,gif,svg|max:1536',
-            // 'flag_logo' => 'image|mimes:jpg,png,jpeg,gif,svg|max:1536',
+            'facebook' => 'url|nullable',
+            'linkedin' => 'url|nullable',
+            'twitter' => 'url|nullable',
+            'pinterest' => 'url|nullable',
+            'main_logo' => 'nullable|image|mimes:jpg,png,jpeg,gif,svg|max:5120',
         ]);
 
         $siteSetting = SiteSetting::find(1);
@@ -108,11 +72,9 @@ class SiteSettingController extends Controller
         if ($request->hasFile('main_logo')) {
             $uploadedFile = $request->file('main_logo');
 
-            // Move the uploaded file to the desired location
             $newMainLogo = time() . '-mainlogo' . $request->title . '.' . $uploadedFile->getClientOriginalExtension();
             $uploadedFile->move(public_path('uploads/sitesetting/'), $newMainLogo);
 
-            // Update the image field in the database or storage
             $siteSetting->main_logo = $newMainLogo;
         }
 
@@ -129,16 +91,5 @@ class SiteSettingController extends Controller
 
         return redirect('admin/sitesettings/index')->with('success', 'Site settings updated successfully!');
 
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\SiteSetting  $siteSetting
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(SiteSetting $siteSetting)
-    {
-        //
     }
 }
