@@ -289,10 +289,7 @@
             },
             content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
         });
-
-
-
-
+        
         // Initialize ClassicEditor for content if needed
         ClassicEditor.create(document.querySelector('#content')).catch(error => {
             console.error(error);

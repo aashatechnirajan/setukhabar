@@ -256,11 +256,6 @@ hr.dob_line{
     margin-top: 20px;
 }
 
-
-
-
-
-
 .top_ad{
     /* border: black 1px solid; */
     margin: 30px;
@@ -270,12 +265,10 @@ hr.dob_line{
 }
 
 .top_ad img{
-
-    height: auto;
-    max-height: 150px;
-    width: 100%;
-
-
+  height: auto;
+  max-height:250px;
+  width: 100%;
+  object-fit: cover;
 }
 
 /* home page ads */

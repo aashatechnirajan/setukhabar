@@ -119,10 +119,10 @@
 
             <span class="social_share">
                 <span>Shares: <span id="shares">{{ $post->shares }}</span>
-                        <button id="shareButton" data-id="{{ $post->id }}" class="no_button_style"> 
+                        <div id="shareButton" data-id="{{ $post->id }}" class="no_button_style"> 
                             {!! $shareComponent !!}
                             
-                        </button>
+                        </div>
                  
                 </span>
                     {{-- <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> --}}
@@ -305,57 +305,5 @@
 
 
 @include('portal.includes.tenth')
-
-
-{{-- @section('script') --}}
-<script>
-$(document).ready(function() {
-    var executingAjax = false;
-    var eventName = 'customEvent';
-   
-
-    var clickedLink = $(this); // The clicked <a> tag
-//             var href = $(this).attr('href');
-//             // console.log(href);
-
-
-    var postId = $('#shareButton').data('id');
-    eventHandler(postId, clickedLink);
-//  var parentElement = $(this).closest('.parent');
-
-//  var postId = parentElement.data('id'); // Get the post id  value
-//  console.log(parentElement);
-    
-    function eventHandler(postId, clickedLink) {
-        console.log(executingAjax);
-        if (!executingAjax) {
-            executingAjax = true;
-            console.log('Event triggered'+ postId);
-
-            $.ajax({
-            url: '/post/increment/share/'+postId, // Replace with your actual URL
-            type: 'GET',
-            success: function(response){
-                console.log(clickedLink);
-                // alert("hello successs");
-              //  e.stopPropagation();
-                clickedLink.trigger('click');
-                executingAjax = false; // Reset the flag
-            },
-            error: function() {
-                // alert("failed");
-                // Handle error if needed
-            }
-        });
-         
-        }
-    }
-    
-    $(document).on(eventName, eventHandler);
-});
-
-
-
-</script>
 
 @endsection

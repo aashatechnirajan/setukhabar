@@ -137,7 +137,7 @@ class PostController extends Controller
 
     $messages = [
         'image.*.max' => 'Image size cannot exceed 6MB. Please upload a smaller image.',
-        'image.*.mimes' => 'Only jpeg, png, jpg, and gif images are allowed.',
+        'image.*.mimes' => 'Only jpeg, png, jpg, webp and gif images are allowed.',
         'image.*.image' => 'The uploaded file must be an image.'
     ];
 
@@ -146,7 +146,7 @@ class PostController extends Controller
         'title' => 'required',
         'description' => 'required',
         'content' => 'required',
-        'image.*' => 'required|image|mimes:jpeg,png,jpg,gif|max:6000', // Maximum file size of 6 MB
+        'image.*' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:6000', // Maximum file size of 6 MB
         'categories' => 'required',
         'sections' => 'sometimes',
         'reporter_name' => 'nullable',
@@ -238,12 +238,6 @@ class PostController extends Controller
     }
 
 
-
-
-
-
-
-
     /**
      * Show the form for editing the specified resource.
      *
@@ -259,13 +253,6 @@ class PostController extends Controller
         return view('admin.post.update', ['post' => $post, 'categories' => $categories, 'sections' => $sections]);
     }
 
-
-
-
-
-
-
-
     /**
      * Update the specified resource in storage.
      *
@@ -278,7 +265,7 @@ class PostController extends Controller
         abort_unless(Gate::allows('hasPermission', 'update_posts'), 403);
         $messages = [
             'image.*.max' => 'Image size cannot exceed 6MB. Please upload a smaller image.',
-            'image.*.mimes' => 'Only jpeg, png, jpg, and gif images are allowed.',
+            'image.*.mimes' => 'Only jpeg, png, jpg,webp and gif images are allowed.',
             'image.*.image' => 'The uploaded file must be an image.'
         ];
 
@@ -288,7 +275,7 @@ class PostController extends Controller
             'title' => 'required',
             'description' => 'required',
             'content' => 'required',
-            'image.*' => 'image|mimes:jpeg,png,jpg,gif|max:6000',
+            'image.*' => 'image|mimes:jpeg,png,jpg, webp, gif|max:6000',
             'categories' => 'required',
             'repoter_name' => 'nullable',
         ]);
