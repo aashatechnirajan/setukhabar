@@ -1,6 +1,6 @@
 <section>
     <div class="container">
-        <a href="{{ route('category.render', [$categories[3]->slug, $categories[3]]) }}">
+        <a href="{{ route('category.render', [$categories[4]->slug, $categories[4]]) }}">
             <p class="cat_title">
                 {{ $categories[3]->title }}
             </p>

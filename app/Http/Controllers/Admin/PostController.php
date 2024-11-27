@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
 use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\UtilityFunctions;
 
 
@@ -25,11 +26,14 @@ class PostController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function index()
-    {
-        abort_unless(Gate::allows('hasPermission', 'view_posts'), 403);
-        $posts = Post::with('getCategories', 'getSections')->latest()->paginate(20);
-        return view('admin.post.index', ['posts' => $posts]);
+{
+    abort_unless(Gate::allows('hasPermission', 'view_posts'), 403);
+    $posts = Post::with('getCategories', 'getSections')->latest()->paginate(20);
+    if ($posts->isEmpty()) {
+        $posts = null;
     }
+    return view('admin.post.index', ['posts' => $posts]);
+}
 
 
 
@@ -40,47 +44,23 @@ class PostController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function create()
-    {
-        abort_unless(Gate::allows('hasPermission', 'create_posts'), 403);
-
-
-
-
-
-
-
-
-        $categories = Category::all();
-        $sections = Section::all();
-        return view('admin.post.create', ['categories' => $categories, 'sections' => $sections]);
-    }
-
-
-
-
-
-
+{
+    abort_unless(Gate::allows('hasPermission', 'create_posts'), 403);
+    $categories = Category::all();
+    $sections = Section::all();
+    $images = [];
+    return view('admin.post.create', ['categories' => $categories, 'sections' => $sections, 'images' => $images]);
+}
 
 
     // FUNCTION TO CONVERT IMAGE
-
-
-
-
-
-
-
-
     private function convertImage($image)
     {
-        // Generate a unique file name
         $fileName = uniqid() . '.webp';
-        $imagePath = 'uploads/' . $fileName; // Save inside storage/app/uploads
+        $imagePath = 'uploads/' . $fileName;
    
         try {
-            // Use the Storage facade to store the image
             $img = Image::make($image->getRealPath());
-            // Save the image in storage/app/uploads directory
             Storage::disk('local')->put($imagePath, (string) $img->encode('webp', 70));
    
             return $imagePath;
@@ -95,16 +75,14 @@ class PostController extends Controller
         $news = [];
    
         foreach ($images as $image) {
-            // Generate a unique image name
             $image_name = hexdec(uniqid()) . '-' . time() . '.' . $ext;
-            $imagePath = 'uploads/' . $image_name; // Save inside storage/app/uploads
+            $imagePath = 'uploads/' . $image_name;
    
             try {
-                // Convert the image to the correct format and save it in the storage folder
                 $image_convert = Image::make($image->getRealPath());
                 Storage::disk('local')->put($imagePath, (string) $image_convert->encode($ext, 50));
    
-                $news[] = $imagePath; // Store relative path for DB
+                $news[] = $imagePath;
             } catch (\Exception $e) {
                 return $e->getMessage();
             }
@@ -137,7 +115,7 @@ class PostController extends Controller
 
     $messages = [
         'image.*.max' => 'Image size cannot exceed 6MB. Please upload a smaller image.',
-        'image.*.mimes' => 'Only jpeg, png, jpg, webp and gif images are allowed.',
+        'image.*.mimes' => 'Only jpeg, png, jpg, and gif images are allowed.',
         'image.*.image' => 'The uploaded file must be an image.'
     ];
 
@@ -146,7 +124,7 @@ class PostController extends Controller
         'title' => 'required',
         'description' => 'required',
         'content' => 'required',
-        'image.*' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:6000', // Maximum file size of 6 MB
+        'image.*' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:6000',
         'categories' => 'required',
         'sections' => 'sometimes',
         'reporter_name' => 'nullable',
@@ -159,83 +137,33 @@ class PostController extends Controller
         $post = new Post;
         $post->title = $request->title;
         $post->description = $request->description;
-
-
-
-
-        // Clean and assign content
-        $content = $request->content;
-        $strippedContent = preg_replace('/<(?!p\b)[^>]*>/', '', $content);
-        $post->content = $strippedContent;
-
-
-
-
-        // Process tags
+        $post->content = $request->content;
         $post->tags = $this->processTags($request->tags);
         $post->slug = Str::slug(substr($request->title, 0, 500));
 
 
-
-
-        // Process images
-        $uploadedImages = [];
         if ($request->hasFile('image')) {
+            $uploadedImages = [];
             foreach ($request->file('image') as $file) {
                 $imageName = uniqid() . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('uploads/post'), $imageName);
-                $uploadedImages[] = 'uploads/post/' . $imageName;
+                $uploadedImages[] = $imageName;
             }
+            $post->image = implode(',', $uploadedImages);
         }
 
 
-
-
-        // Save the images as JSON in the `image` column
-        $post->image = json_encode($uploadedImages);
-
-
-
-
-        // Other fields
         $post->reporter_name = $request->reporter_name;
-
-
-
-
-        // Save the post
         $post->save();
-
-
-
-
-        // Sync categories and sections
         $post->getCategories()->sync($request->categories);
         $post->getSections()->sync($request->sections);
 
 
-
-
         return redirect()->route('admin.posts.index')->with('success', 'Post created successfully.');
-   } catch (Exception $e) {
+    } catch (Exception $e) {
         return redirect()->back()->withInput()->with('errorMessage', 'Error creating post: ' . $e->getMessage());
     }
 }
-
-
-
-
-   
-   
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Post  $post
-     * @return \Illuminate\Http\Response
-     */
-    public function show($slug)
-    {
-    }
 
 
     /**
@@ -248,10 +176,14 @@ class PostController extends Controller
     {
         abort_unless(Gate::allows('hasPermission', 'update_posts'), 403);
         $post = Post::find($id);
+        $images = explode(',', $post->image);
         $categories = Category::all();
         $sections = Section::all();
-        return view('admin.post.update', ['post' => $post, 'categories' => $categories, 'sections' => $sections]);
+        return view('admin.post.update', ['post' => $post, 'categories' => $categories, 'sections' => $sections, 'images' => $images]);
     }
+
+
+
 
     /**
      * Update the specified resource in storage.
@@ -261,71 +193,175 @@ class PostController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request)
-    {
-        abort_unless(Gate::allows('hasPermission', 'update_posts'), 403);
-        $messages = [
-            'image.*.max' => 'Image size cannot exceed 6MB. Please upload a smaller image.',
-            'image.*.mimes' => 'Only jpeg, png, jpg,webp and gif images are allowed.',
-            'image.*.image' => 'The uploaded file must be an image.'
-        ];
+{
+    // Validate input
+    $messages = [
+        'image.*.max' => 'Image size cannot exceed 6MB. Please upload a smaller image.',
+        'image.*.mimes' => 'Only jpeg, png, jpg, and gif images are allowed.',
+        'image.*.image' => 'The uploaded file must be an image.'
+    ];
 
 
-        $this->validate($request, [
-            'id' => 'required',
-            'title' => 'required',
-            'description' => 'required',
-            'content' => 'required',
-            'image.*' => 'image|mimes:jpeg,png,jpg, webp, gif|max:6000',
-            'categories' => 'required',
-            'repoter_name' => 'nullable',
+    $this->validate($request, [
+        'id' => 'required|exists:posts,id',
+        'title' => 'required|string|max:255',
+        'description' => 'required|string',
+        'content' => 'required|string',
+        'image.*' => 'sometimes|image|mimes:jpeg,png,jpg,gif,webp|max:6000',
+        'categories' => 'required|array',
+        'categories.*' => 'exists:categories,id',
+        'sections' => 'sometimes|array',
+        'sections.*' => 'exists:sections,id',
+        'reporter_name' => 'nullable|string|max:255',
+        'tags' => 'nullable|string',
+    ], $messages);
+
+
+    try {
+        $post = Post::findOrFail($request->id);
+        
+        // Process content before saving
+        $content = $request->content;
+        
+        // Replace relative URLs with absolute URLs in content
+        $content = preg_replace_callback(
+            '/<img[^>]+src=["\']([^"\']+)["\']/',
+            function($matches) {
+                $src = $matches[1];
+                if (!filter_var($src, FILTER_VALIDATE_URL)) {
+                    // If it's a relative path, convert to absolute URL
+                    return str_replace(
+                        $src,
+                        asset('uploads/post/' . basename($src)),
+                        $matches[0]
+                    );
+                }
+                return $matches[0];
+            },
+            $content
+        );
+
+        // Extract and process content images
+        $contentImages = $this->extractContentImages($content);
+        
+        // Handle existing images
+        $existingImages = $request->input('existing_images', []);
+        $removedImages = $request->input('removed_images', []);
+        
+        // Remove specified images
+        foreach ($removedImages as $imageToRemove) {
+            $existingImages = array_filter($existingImages, function($image) use ($imageToRemove) {
+                return trim($image) !== trim($imageToRemove);
+            });
+            $this->deleteImageFromStorage($imageToRemove, 'post');
+        }
+
+        // Handle new image uploads
+        $newImages = [];
+        if ($request->hasFile('image')) {
+            foreach ($request->file('image') as $file) {
+                $imageName = $this->handleImageUpload($file, 'post');
+                if ($imageName) {
+                    $newImages[] = $imageName;
+                }
+            }
+        }
+
+        // Combine all images
+        $allImages = array_merge(
+            $existingImages,
+            $newImages,
+            $contentImages
+        );
+        
+        // Remove duplicates while preserving order
+        $allImages = array_values(array_unique($allImages));
+
+        // Update post
+        $post->fill([
+            'title' => $request->title,
+            'description' => $request->description,
+            'content' => $content,
+            'tags' => $this->processTags($request->tags),
+            'slug' => Str::slug(substr($request->title, 0, 500)),
+            'reporter_name' => $request->reporter_name,
+            'image' => $allImages ? implode(',', $allImages) : null
         ]);
 
+        if ($post->save()) {
+            $post->getCategories()->sync($request->categories);
+            $post->getSections()->sync($request->sections ?? []);
+            return redirect()->route('admin.posts.index')
+                ->with('successMessage', 'Post updated successfully!');
+        }
 
+        return redirect()->back()
+            ->withInput()
+            ->with('errorMessage', 'Failed to update post.');
+
+    } catch (Exception $e) {
+        Log::error('Post Update Error: ' . $e->getMessage());
+        return redirect()->back()
+            ->withInput()
+            ->with('errorMessage', 'An error occurred: ' . $e->getMessage());
+    }
+}
+
+    /**
+     * Handle image upload
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @param string $subdirectory
+     * @return string|null
+     */
+    private function handleImageUpload($file, $subdirectory = 'post')
+{
+    try {
+        $imageName = uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path("uploads/{$subdirectory}"), $imageName);
+        return $imageName;
+    } catch (\Exception $e) {
+        Log::error('Image upload failed: ' . $e->getMessage());
+        return null;
+    }
+}
+
+
+private function deleteImageFromStorage($imageName, $subdirectory = 'post')
+{
+    $fullPath = public_path("uploads/{$subdirectory}/" . basename($imageName));
+    if (file_exists($fullPath)) {
         try {
-            $post = Post::find($request->id);
-           
-            // Process images
-            if ($request->hasFile('image')) {
-                $uploadedImages = [];
-                foreach ($request->file('image') as $file) {
-                    $imageName = uniqid() . '.' . $file->getClientOriginalExtension();
-                    $file->move(public_path('uploads/post'), $imageName);
-                    $uploadedImages[] = 'uploads/post/' . $imageName;
-                }
-               
-                // Update the images array in the database
-                $post->image = json_encode($uploadedImages);
-            }
-
-
-
-
-            $post->title = $request->title;
-            $post->description = $request->description;
-            $post->content = $request->content;
-            $post->tags = $this->processTags($request->tags);
-            $post->slug = Str::slug(substr($request->title, 0, 500));
-            $post->reporter_name = $request->reporter_name;
-
-
-
-
-            if ($post->save()) {
-                $post->getCategories()->sync($request->categories);
-                $post->getSections()->sync($request->sections);
-                UtilityFunctions::createHistory('Updated Post with Id ' . $post->id . ' and title ' . $post->title, 1);
-                return redirect()->route('admin.posts.index')->with(['successMessage' => 'Success!! Post Updated']);
-            } else {
-                return redirect()->back()->with(['errorMessage' => 'Error!! Post not Updated']);
-            }
-        } catch (Exception $e) {
-            return redirect()->back()->with(['errorMessage' => $e->getMessage()]);
+            unlink($fullPath);
+        } catch (\Exception $e) {
+            Log::error('Failed to delete image: ' . $e->getMessage());
         }
     }
+}
 
-
-
-
+private function extractContentImages($content) {
+    $contentImages = [];
+    
+    // Use regex to find all image sources in the content
+    preg_match_all('/<img[^>]+src=["\']([^"\']+)["\']/', $content, $matches);
+    
+    if (!empty($matches[1])) {
+        foreach ($matches[1] as $imageSrc) {
+            // Check if the image is a full URL or a relative path
+            if (filter_var($imageSrc, FILTER_VALIDATE_URL)) {
+                continue; // Skip external URLs
+            }
+            
+            // Extract filename from the path
+            $filename = basename($imageSrc);
+            if (!empty($filename)) {
+                $contentImages[] = $filename;
+            }
+        }
+    }
+    
+    return array_unique($contentImages);
+}
     /**
      * Remove the specified resource from storage.
      *
@@ -352,13 +388,25 @@ class PostController extends Controller
 
 
     public function uploadImage(Request $request)
-    {
+{
+    try {
+        $this->validate($request, [
+            'file' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:6000',
+        ]);
 
+        $file = $request->file('file');
+        $fileName = uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('uploads/post'), $fileName);
 
-        $fileName = $request->file('file')->getClientOriginalName();
-        $path = $request->file('file')->storeAs('uploads/tiny', $fileName, 'public');
-        return response()->json(['location' => "/storage/$path"]);
-        $imgpath = request()->file('file')->store('uploads/tiny/', 'public');
-        return response()->json(['location' => "/storage/$imgpath"]);
+        return response()->json([
+            'location' => asset('uploads/post/' . $fileName)
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage()
+        ], 422);
     }
 }
+}
+
+

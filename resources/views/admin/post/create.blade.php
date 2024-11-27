@@ -1,5 +1,6 @@
 @extends('admin.layouts.master')
 
+
 <!-- Main content -->
 @section('content')
 @include('includes.forms')
@@ -12,11 +13,14 @@
     </div>
 
 
+
+
     @if(session('errorMessage'))
     <div class="alert alert-danger">
         {{ session('errorMessage') }}
     </div>
 @endif
+
 
     @if ($errors->any())
 <div class="alert alert-danger">
@@ -47,7 +51,12 @@
             </div>
 
 
+
+
             <div>
+
+
+
 
 
 
@@ -58,29 +67,35 @@
                 {{ old('content') }}
                 </textarea>
 
+
             </div>
+
+
 
 
             <div class="form-group">
                 <label for="exampleInputEmail1"> Images <span style="color:red;"></span></label>
                 <span style="color:red; font-size:large"> *</span>
-
-                <input type="file" name="image[]" id="" class="form-control" multiple onchange="previewImages(event)" required>
-
+                <input type="file" name="image[]" id="" class="form-control" multiple onchange="previewImages(event)">
             </div>
             <div id="imagePreviews" class="row">
-                @foreach (old('image', []) as $uploadedImage)
-                <div class="col-md-2 mb-3 image-preview">
-                    <img src="{{ $uploadedImage }}" alt="Image Preview" class="img-fluid">
-                    <span class="remove-image" onclick="removePreview(this)">Remove</span>
-                </div>
-            @endforeach
+                @if (!empty($images))
+                    @foreach ($images as $image)
+                        <div class="col-md-2 mb-3 image-preview">
+                            <img src="{{ asset('uploads/post/' . $image) }}" alt="Image Preview" class="img-fluid">
+                            <span class="remove-image" onclick="removePreview(this)">Remove</span>
+                        </div>
+                    @endforeach
+                @endif
             </div>
+
 
             <div class="form-group">
                 <label for="reporter">Reporter</label>
                 <input type="text" name="reporter_name" class="form-control" id="reporter" placeholder="Reporter Name" value="{{ old('reporter_name') }}">
             </div>
+
+
 
 
             <div style="display: flex;">
@@ -108,14 +123,19 @@
 
 
 
+
+
+
         </div>
         <!-- /.card-body -->
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">Submit</button>
         </div>
 
+
     </div>
     </form>
+
 
     <script>
         // ClassicEditor.create(document.querySelector('#description'));
@@ -125,6 +145,7 @@
         // // .catch(error => {
         // //     console.error(error);
         // // });
+
 
         ClassicEditor.create(document.querySelector('#content'));
         // .then(editor => {
@@ -140,9 +161,11 @@
         const imagePreviews = document.getElementById('imagePreviews');
         imagePreviews.innerHTML = ''; // Clear existing previews
 
+
         for (const file of files) {
             const reader = new FileReader();
             reader.readAsDataURL(file);
+
 
             reader.onload = () => {
                 const preview = document.createElement('div');
@@ -154,7 +177,12 @@
     };
 
 
+
+
     </script>
+
+
+
 
 
 
@@ -164,8 +192,10 @@
         height: 400,
         plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
 
+
         menubar:'file edit view insert format tools table help',
         toollbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen preview save print | insertfile image media template link anchor codesample | ltr rtl',
+
 
         toolbar_sticky: true,
         autosave_ask_before_unload: true,
@@ -176,51 +206,43 @@
         image_advtab: true,
 
 
+
+
     image_title: true,
                 automatic_uploads: true,
-                images_upload_url: '/storage/uploads/tiny/',
-                file_picker_types: 'image',
-    file_picker_callback: function(callback, value, meta) {
-        if (meta.filetype === 'image') {
-            // Open a file upload dialog
-            var input = document.createElement('input');
-            input.setAttribute('type', 'file');
-            input.setAttribute('accept', 'image/*');
-            input.onchange = function() {
-                var file = this.files[0];
-
-                // Upload the image file to the server
-                var formData = new FormData();
-                formData.append('image', file);
-
-                // Make an AJAX request to upload the image
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '/uploadImage', true);
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        var imageUrl = xhr.responseText;
-
-                        // Pass the image URL to the callback function
-                        callback(imageUrl, { alt: file.name });
-                    } else {
-                        console.error('Image upload failed.');
-                    }
-                };
-                xhr.send(formData);
-            };
-            input.click();
-        }
-    }
+                images_upload_url: '{{ route("admin.posts.upload-image") }}',
+            file_picker_callback: function(callback, value, meta) {
+                if (meta.filetype === 'image') {
+                    var input = document.createElement('input');
+                    input.setAttribute('type', 'file');
+                    input.setAttribute('accept', 'image/*');
+                    input.onchange = function() {
+                        var file = this.files[0];
+                        var formData = new FormData();
+                        formData.append('file', file);
 
 
-
+                        fetch('{{ route("admin.posts.upload-image") }}', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            callback(data.location, { alt: file.name });
+                        })
+                        .catch(error => {
+                            console.error('Image upload failed:', error);
+                        });
+                    };
+                    input.click();
+                }
+            }
         });
-
-
-        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
-
     </script>
+@endsection
 
 
 
-    @endsection

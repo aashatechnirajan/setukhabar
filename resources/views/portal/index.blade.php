@@ -69,12 +69,12 @@
 @include('portal.includes.first')
 @include('portal.includes.second')
 @include('portal.includes.third')
+@include('portal.includes.ninth')
 @include('portal.includes.fourth')
 @include('portal.includes.fifth')
 @include('portal.includes.sixth')
 @include('portal.includes.seventh')
 @include('portal.includes.eighth')
-@include('portal.includes.ninth')
 @include('portal.includes.tenth')
 @endsection
 

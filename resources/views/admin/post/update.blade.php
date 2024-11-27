@@ -1,8 +1,4 @@
 @extends('admin.layouts.master')
-
-
-
-
 @section('content')
 @include('includes.forms')
 @if ($errors->any())
@@ -21,30 +17,23 @@
                 Back</button></a>
     </div>
 
-
-
-
     @if(session('errorMessage'))
     <div class="alert alert-danger">
         {{ session('errorMessage') }}
     </div>
     @endif
-
-
-
-
     <form id="quickForm" method="POST" action="{{ route('admin.posts.update') }}" enctype="multipart/form-data">
         @csrf
         <input type="hidden" name="id" value="{{ $post->id }}">
         <div class="card-body">
             <div class="form-group">
                 <label for="title">Title</label><span style="color:red; font-size:large"> *</span>
-                <input style="width:auto;" type="text" value="{{ $post->title ?? '' }}" name="title" class="form-control" id="title" placeholder="Title" required>
+                <input type="text" value="{{ $post->title ?? '' }}" name="title" class="form-control" id="title" placeholder="Title" required>
             </div>
            
-            <div>
+            <div class="form-group">
                 <label for="registration_date">Description</label><span style="color:red; font-size:large"> *</span>
-                <textarea style="max-width: 30%;" type="text" class="form-control" name="description" id="description" placeholder="Add Description" required>{!! $post->description ?? '' !!}</textarea>
+                <textarea  type="text" class="form-control" name="description" id="description" placeholder="Add Description" required>{!! $post->description ?? '' !!}</textarea>
             </div>
            
             <div class="form-group">
@@ -52,34 +41,46 @@
                 <input type="text" name="tags" value="{{ $post->tags ?? '' }}" class="form-control" id="address" placeholder="Tags">
             </div>
            
-            <div class="form-group">
-                <label for="taxpayer_name">Content</label><span style="color:red; font-size:large"> *</span>
-                <textarea style="max-width: 100%;min-height: 250px;" type="text" class="form-control" id="myTextarea" name="content" placeholder="Add Description">{!! $post->content ?? '' !!}</textarea>
-            </div>
+           <!-- Content Input with TinyMCE -->
+           <div class="form-group">
+            <label for="taxpayer_name">Content</label><span style="color:red; font-size:large"> *</span>
+            <textarea style="max-width: 100%;min-height: 250px;" type="text" class="form-control" id="myTextarea" name="content" placeholder="Add Description">{!! $post->content ?? '' !!}</textarea>
+        </div>
 
-
-
-
-            <!-- Current Images Display -->
-            <div class="form-group">
-                <label>Current Images</label>
+        <div class="form-group">
+                <label>Current Post Images</label>
                 <div id="currentImages" class="row mb-3">
                     @if($post->image)
-                        @foreach(json_decode($post->image) as $index => $image)
-                        <div class="col-md-2 mb-3 current-image">
-                            <div class="position-relative">
-                                <img src="{{ asset($image) }}" class="img-fluid rounded" alt="Current Image">
-                                <input type="hidden" name="existing_images[]" value="{{ $image }}">
-                               
-                            </div>
-                        </div>
-                        @endforeach
+                        @php
+                            $images = is_string($post->image)
+                                ? (strpos($post->image, ',') !== false
+                                    ? explode(',', $post->image)
+                                    : [$post->image])
+                                : (array)$post->image;
+                        @endphp
+
+                        @if(!empty($images))
+                            @foreach($images as $index => $image)
+                                <div class="col-md-2 mb-3 current-image">
+                                    <div class="position-relative">
+                                        <img src="{{ asset('uploads/post/' . trim($image)) }}" class="img-fluid rounded" alt="Current Image">
+                                        <input type="hidden" name="existing_images[]" value="{{ trim($image) }}">
+                                        <button type="button" class="btn btn-danger btn-sm position-absolute"
+                                                style="top: 5px; right: 5px;"
+                                                onclick="removeCurrentImage(this, '{{ trim($image) }}')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <p>No images found</p>
+                        @endif
+                    @else
+                        <p>No images found</p>
                     @endif
                 </div>
             </div>
-
-
-
 
             <!-- New Image Upload -->
             <div class="form-group">
@@ -88,23 +89,13 @@
                 <input type="file" name="image[]" id="imageInput" class="form-control" multiple accept="image/*" onchange="previewImages(event)">
             </div>
 
-
-
-
             <!-- New Image Previews -->
             <div id="imagePreviews" class="row"></div>
-
-
-
 
             <div class="form-group">
                 <label for="reporter">Reporter Name</label>
                 <input style="width:auto;" type="text" value="{{ $post->reporter_name ?? '' }}" name="reporter_name" class="form-control" id="reporter" placeholder="Reporter Name">
             </div>
-
-
-
-
             <div style="display: flex;">
                 <div class="form-group" style="margin: auto;">
                     <label>Sections</label>
@@ -129,17 +120,10 @@
                 </div>
             </div>
         </div>
-
-
-
-
         <div class="card-footer">
             <button type="submit" class="btn btn-primary">Submit</button>
         </div>
     </form>
-
-
-
 
     <style>
         .current-image img, .preview-image img {
@@ -156,19 +140,12 @@
         }
     </style>
 
-
-
-
     <script>
         // Function to preview new images
         const previewImages = (e) => {
             const files = e.target.files;
             const imagePreviews = document.getElementById('imagePreviews');
             imagePreviews.innerHTML = ''; // Clear existing previews
-
-
-
-
             Array.from(files).forEach((file, index) => {
                 const reader = new FileReader();
                
@@ -187,17 +164,9 @@
                     `;
                     imagePreviews.appendChild(preview);
                 };
-
-
-
-
                 reader.readAsDataURL(file);
             });
         };
-
-
-
-
         // Function to remove current image
         const removeCurrentImage = (button, index) => {
             const container = button.closest('.current-image');
@@ -211,10 +180,6 @@
             input.value = index;
             form.appendChild(input);
         };
-
-
-
-
         // Function to remove new image preview
         const removeNewImage = (button, index) => {
             const container = button.closest('.preview-image');
@@ -233,67 +198,142 @@
            
             fileInput.files = dt.files;
         };
+         const removeContentImage = (button, imageSrc) => {
+            const container = button.closest('.content-image');
+            container.remove();
+           
+            // Optional: If you want to track removed content images
+            const form = document.getElementById('quickForm');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'removed_content_images[]';
+            input.value = imageSrc;
+            form.appendChild(input);
 
 
-
-
-        // Initialize TinyMCE
-        tinymce.init({
-            selector: "#myTextarea",
-            height: 400,
-            plugins: 'preview importcss searchreplace autolink autosave save directionality code visualblocks visualchars fullscreen image link media template codesample table charmap pagebreak nonbreaking anchor insertdatetime advlist lists wordcount help charmap quickbars emoticons',
-            menubar: 'file edit view insert format tools table help',
-            toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | forecolor backcolor removeformat | pagebreak | charmap emoticons | fullscreen preview save print | insertfile image media template link anchor codesample | ltr rtl',
-            toolbar_sticky: true,
-            autosave_ask_before_unload: true,
-            autosave_interval: '30s',
-            autosave_prefix: '{path}{query}-{id}-',
-            autosave_restore_when_empty: false,
-            autosave_retention: '2m',
-            image_advtab: true,
-            image_title: true,
-            automatic_uploads: true,
-            images_upload_url: '/storage/uploads/tiny/',
-            file_picker_types: 'image',
-            file_picker_callback: function(callback, value, meta) {
-                if (meta.filetype === 'image') {
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'file');
-                    input.setAttribute('accept', 'image/*');
-                   
-                    input.onchange = function() {
-                        const file = this.files[0];
-                        const formData = new FormData();
-                        formData.append('image', file);
-
-
-
-
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('POST', '/uploadImage', true);
-                       
-                        xhr.onload = function() {
-                            if (xhr.status === 200) {
-                                const imageUrl = xhr.responseText;
-                                callback(imageUrl, { alt: file.name });
-                            } else {
-                                console.error('Image upload failed.');
-                            }
-                        };
-                       
-                        xhr.send(formData);
-                    };
-                   
-                    input.click();
-                }
-            },
-            content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
-        });
+            // Optional: Remove image from content
+            const content = document.getElementById('myTextarea');
+            content.value = content.value.replace(new RegExp(`<img[^>]+src="${imageSrc}"[^>]*>`, 'g'), '');
+        };
+        </script>
+<script>
+    tinymce.init({
+        selector: "#myTextarea",
+        height: 400,
+        plugins: [
+            'preview importcss searchreplace autolink autosave save directionality',
+            'code visualblocks visualchars fullscreen image link media template',
+            'codesample table charmap pagebreak nonbreaking anchor insertdatetime',
+            'advlist lists wordcount help charmap quickbars emoticons'
+        ],
+        menubar: 'file edit view insert format tools table help',
+        toolbar: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | ' +
+                'alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist | ' +
+                'forecolor backcolor removeformat | pagebreak | charmap emoticons | ' +
+                'fullscreen preview save print | insertfile image media template link anchor codesample | ltr rtl',
+        toolbar_sticky: true,
         
-        // Initialize ClassicEditor for content if needed
-        ClassicEditor.create(document.querySelector('#content')).catch(error => {
-            console.error(error);
-        });
+        // Autosave settings
+        autosave_ask_before_unload: true,
+        autosave_interval: '30s',
+        autosave_prefix: '{path}{query}-{id}-',
+        autosave_restore_when_empty: false,
+        autosave_retention: '2m',
+        
+        // Image settings
+        image_advtab: true,
+        image_title: true,
+        automatic_uploads: true,
+        document_base_url: '{{ url("/") }}',
+        relative_urls: false,
+        remove_script_host: false,
+        convert_urls: true,
+        
+        // File picker configuration
+        file_picker_types: 'image media',
+        file_picker_callback: function(callback, value, meta) {
+            if (meta.filetype === 'image' || meta.filetype === 'media') {
+                var input = document.createElement('input');
+                input.setAttribute('type', 'file');
+                input.setAttribute('accept', meta.filetype === 'image' ? 'image/*' : 'video/*');
+                
+                input.onchange = function() {
+                    var file = this.files[0];
+                    var formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('_token', '{{ csrf_token() }}');
+                    
+                    fetch('/admin/uploadImage', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        callback(data.location, { title: file.name });
+                    })
+                    .catch(error => {
+                        console.error('Upload failed:', error);
+                    });
+                };
+                
+                input.click();
+            }
+        },
+        
+        // Custom image upload handler
+        images_upload_handler: function(blobInfo, success, failure) {
+            const formData = new FormData();
+            formData.append('file', blobInfo.blob(), blobInfo.filename());
+            formData.append('_token', '{{ csrf_token() }}');
+            
+            fetch('/admin/uploadImage', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(result => {
+                success(result.location);
+            })
+            .catch(error => {
+                failure('Image upload failed: ' + error.message);
+            });
+        },
+        
+        // Setup and initialization callbacks
+        setup: function(editor) {
+            editor.on('init', function() {
+                const content = editor.getContent();
+                const updatedContent = content.replace(
+                    /<img[^>]+src="([^"]+)"[^>]>/g,
+                    function(match, src) {
+                        if (!src.startsWith('http') && !src.startsWith('/')) {
+                            return match.replace(src, '{{ asset("uploads/post") }}/' + src);
+                        }
+                        return match;
+                    }
+                );
+                editor.setContent(updatedContent);
+            });
+        },
+        
+        init_instance_callback: function(editor) {
+            editor.on('BeforeSetContent', function(e) {
+                if (e.content) {
+                    e.content = e.content.replace(
+                        /<img[^>]+src="([^"]+)"[^>]*>/g,
+                        function(match, src) {
+                            if (!src.startsWith('http') && !src.startsWith('/')) {
+                                return match.replace(src, '{{ asset("uploads/post") }}/' + src);
+                            }
+                            return match;
+                        }
+                    );
+                }
+            });
+        },
+        
+        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
+    });
     </script>
 </div>
 @endsection

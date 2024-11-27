@@ -1,10 +1,13 @@
 <?php
 
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+
 use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\SocialShareButtonsController;
+use App\Http\Controllers\Admin\PostController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -18,7 +21,6 @@ use App\Http\Controllers\SocialShareButtonsController;
 
 Auth::routes();
 Route::get('/', [App\Http\Controllers\HomeController::class, 'index'])->name('index');
-
 
 // Route::get('MorePosts/{slug}/{id}', [App\Http\Controllers\HomeController::class, 'index'])->name('MorePosts');
 
@@ -67,9 +69,7 @@ Route::prefix('/admin')->namespace('Admin')->name('admin.')->middleware(['web', 
     Route::get('/posts/edit/{id}', 'PostController@edit')->name('posts.edit');
     Route::post('/posts/update', 'PostController@update')->name('posts.update');
     Route::get('/posts/delete/{id}', 'PostController@destroy')->name('posts.destroy');
-    Route::post('uploadImage','PostController@uploadImage')->name('uploadImage');
-
-
+    Route::post('/posts/upload-image', [PostController::class, 'uploadImage'])->name('posts.upload-image');
 
     //Categories
     Route::get('/categories/index', 'CategoryController@index')->name('categories.index');
@@ -111,7 +111,6 @@ Route::prefix('/admin')->namespace('Admin')->name('admin.')->middleware(['web', 
     Route::post('/displays/update', 'DisplayController@update')->name('displays.update');
     Route::get('/displays/delete/{id}', 'DisplayController@destroy')->name('displays.destroy');
 
-    //
     Route::get('/sitesettings/index', 'SiteSettingController@index')->name('sitesettings.index');
 
     Route::post('/sitesettings/update', 'SiteSettingController@update')->name('sitesettings.update');
@@ -123,8 +122,6 @@ Route::prefix('/admin')->namespace('Admin')->name('admin.')->middleware(['web', 
     // Route::post('//update','@update')->name('.update');
     // Route::get('//delete/{id}','@destroy')->name('.destroy');
 
-
-
     // Favicon
     Route::get('/favicons/index', [App\Http\Controllers\FaviconController::class, 'index'])->name('favicons.index');
     Route::get('/favicons/create', [App\Http\Controllers\FaviconController::class, 'create'])->name('favicons.create');
@@ -132,7 +129,6 @@ Route::prefix('/admin')->namespace('Admin')->name('admin.')->middleware(['web', 
     Route::get('/favicons/edit/{id}', [App\Http\Controllers\FaviconController::class, 'edit'])->name('favicons.edit');
     Route::post('/favicons/update', [App\Http\Controllers\FaviconController::class, 'update'])->name('favicons.update');
     Route::get('/favicons/delete/{id}', [App\Http\Controllers\FaviconController::class, 'destroy'])->name('favicons.destroy');
-
 
     // Route::get('/galleries/index', 'GalleryController@index')->name('galleries.index');
     // Route::get('/galleries/create', 'GalleryController@create')->name('galleries.create');
@@ -146,8 +142,6 @@ Route::prefix('/admin')->namespace('Admin')->name('admin.')->middleware(['web', 
     Route::get('/galleries/edit/{id}', [App\Http\Controllers\GalleryController::class, 'edit'])->name('galleries.edit');
     Route::post('/galleries/update', [App\Http\Controllers\GalleryController::class, 'update'])->name('galleries.update');
     Route::get('/galleries/destroy/{id}', [App\Http\Controllers\GalleryController::class, 'destroy'])->name('galleries.destroy');
-
-
 
     //Comments
     Route::get('/comments/index', 'CommentController@index')->name('comments.index');
@@ -166,18 +160,17 @@ Route::prefix('/admin')->namespace('Admin')->name('admin.')->middleware(['web', 
     // Route::get('//delete/{id}','@destroy')->name('.destroy');
 });
 
+
 Route::prefix('/profile')->name('profile.')->middleware(['web', 'auth'])->group(function () {
     Route::get('/', 'ProfilesController@index')->name('index');
     Route::post('/update/info', 'ProfilesController@updateInfo')->name('update.info');
     Route::post('/update/password', 'ProfilesController@updatePassword')->name('update.password');
 });
 
-
 Route::prefix('/')->group(function () {
     Route::get('category/{slug}/{id}', 'RenderController@renderCategory')->name('category.render');
     Route::get('post/{slug}/{id}', 'RenderController@renderPost')->name('post.render');
     Route::get('/post/load-more', 'RenderController@loadMore')->name('post.loadMore');
-
 
     Route::get('tags', 'RenderController@renderTags')->name('post.tags');
     Route::get('search', 'RenderController@renderSearch')->name('post.search');
@@ -191,15 +184,15 @@ Route::prefix('/')->group(function () {
 
     Route::get('photofeature/{id}', 'RenderController@photofeature')->name('photofeature');
 
-
     // For share
-
     // Route::post('post/{id}/track-share', 'RenderController@trackShare')->name('post.trackShare');
     Route::get('post/increment/share/{id}', 'RenderController@incrementShare')->name('post.incrementShare');
-
 
 // SINGLE BLADE
     // Route::get('posts/singleBlade/', 'RenderController@renderSingleBlade')->name('post.singleBlade');
 });
 
 Route::get('/social-media-share', [SocialShareButtonsController::class,'ShareWidget']);
+
+
+

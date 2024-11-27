@@ -17,7 +17,9 @@
        <div class="col-md-8">
            <h1 class="mt-3">{{$breakingPost->title}}</h1>
            <img class="imgsize rounded" src="{{ $breakingPost->firstImagePath }}">
-           <p>{{$breakingPost->content}}</p>
+           <div class="content">
+            {!! $breakingPost->content !!}
+        </div>
        </div>
        @endforeach
        <div class="col-md-4">

@@ -85,4 +85,13 @@ class Post extends Model
         $dateDetail = $info['m'].'-'.$info['F'].'-'.$info['Y'];
         return $dateDetail;
     }
+    
+    public function getFirstImagePathAttribute()
+    {
+        // If the image path is stored with relative path
+        if ($this->image) {  // assuming 'image' is your column name
+            return asset('uploads/post/' . basename($this->image));
+        }
+        return asset('images/default.jpg'); // fallback image
+    }
 }

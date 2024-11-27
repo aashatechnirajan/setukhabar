@@ -45,9 +45,9 @@
 
             <div class="col-md-8 row">
                 <div class="col-md-12">
-                    <a href="{{ route('category.render', [$categories[4]->slug, $categories[4]]) }}">
+                    <a href="{{ route('category.render', [$categories[5]->slug, $categories[5]]) }}">
                         <p class="cat_title">
-                            {{ $categories[4]->title }}
+                            {{ $categories[5]->title }}
                         </p>
                     </a>
                 </div>
