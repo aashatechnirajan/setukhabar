@@ -27,6 +27,7 @@
     "dependencies": {
         "@fortawesome/fontawesome-free": "^5.15.3",
         "slick-carousel": "^1.8.1",
+        "summernote": "^0.9.1",
         "tinymce": "^6.6.0"
     }
 }

@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\SiteSettingController;
 use App\Http\Controllers\SocialShareButtonsController;
+use App\Http\Controllers\Admin\PostController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -67,7 +68,7 @@ Route::prefix('/admin')->namespace('Admin')->name('admin.')->middleware(['web', 
     Route::get('/posts/edit/{id}', 'PostController@edit')->name('posts.edit');
     Route::post('/posts/update', 'PostController@update')->name('posts.update');
     Route::get('/posts/delete/{id}', 'PostController@destroy')->name('posts.destroy');
-    Route::post('uploadImage','PostController@uploadImage')->name('uploadImage');
+    Route::post('/posts/upload-image', [PostController::class, 'uploadImage'])->name('posts.upload-image');
 
 
 

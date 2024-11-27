@@ -64,17 +64,17 @@
             <div class="form-group">
                 <label for="exampleInputEmail1"> Images <span style="color:red;"></span></label>
                 <span style="color:red; font-size:large"> *</span>
-
-                <input type="file" name="image[]" id="" class="form-control" multiple onchange="previewImages(event)" required>
-
+                <input type="file" name="image[]" id="" class="form-control" multiple onchange="previewImages(event)">
             </div>
             <div id="imagePreviews" class="row">
-                @foreach (old('image', []) as $uploadedImage)
-                <div class="col-md-2 mb-3 image-preview">
-                    <img src="{{ $uploadedImage }}" alt="Image Preview" class="img-fluid">
-                    <span class="remove-image" onclick="removePreview(this)">Remove</span>
-                </div>
-            @endforeach
+                @if (!empty($images))
+                    @foreach ($images as $image)
+                        <div class="col-md-2 mb-3 image-preview">
+                            <img src="{{ asset('uploads/post/' . $image) }}" alt="Image Preview" class="img-fluid">
+                            <span class="remove-image" onclick="removePreview(this)">Remove</span>
+                        </div>
+                    @endforeach
+                @endif
             </div>
 
             <div class="form-group">
@@ -178,49 +178,35 @@
 
     image_title: true,
                 automatic_uploads: true,
-                images_upload_url: '/storage/uploads/tiny/',
-                file_picker_types: 'image',
-    file_picker_callback: function(callback, value, meta) {
-        if (meta.filetype === 'image') {
-            // Open a file upload dialog
-            var input = document.createElement('input');
-            input.setAttribute('type', 'file');
-            input.setAttribute('accept', 'image/*');
-            input.onchange = function() {
-                var file = this.files[0];
+                images_upload_url: '{{ route("admin.posts.upload-image") }}',
+            file_picker_callback: function(callback, value, meta) {
+                if (meta.filetype === 'image') {
+                    var input = document.createElement('input');
+                    input.setAttribute('type', 'file');
+                    input.setAttribute('accept', 'image/*');
+                    input.onchange = function() {
+                        var file = this.files[0];
+                        var formData = new FormData();
+                        formData.append('file', file);
 
-                // Upload the image file to the server
-                var formData = new FormData();
-                formData.append('image', file);
-
-                // Make an AJAX request to upload the image
-                var xhr = new XMLHttpRequest();
-                xhr.open('POST', '/uploadImage', true);
-                xhr.onload = function() {
-                    if (xhr.status === 200) {
-                        var imageUrl = xhr.responseText;
-
-                        // Pass the image URL to the callback function
-                        callback(imageUrl, { alt: file.name });
-                    } else {
-                        console.error('Image upload failed.');
-                    }
-                };
-                xhr.send(formData);
-            };
-            input.click();
-        }
-    }
-
-
-
+                        fetch('{{ route("admin.posts.upload-image") }}', {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            callback(data.location, { alt: file.name });
+                        })
+                        .catch(error => {
+                            console.error('Image upload failed:', error);
+                        });
+                    };
+                    input.click();
+                }
+            }
         });
-
-
-        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:16px }'
-
     </script>
-
-
-
-    @endsection
+@endsection

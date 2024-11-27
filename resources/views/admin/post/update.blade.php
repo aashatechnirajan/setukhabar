@@ -1,6 +1,4 @@
 @extends('admin.layouts.master')
-
-
 @section('content')
 @include('includes.forms')
 @if ($errors->any())
@@ -19,13 +17,11 @@
                 Back</button></a>
     </div>
 
-
     @if(session('errorMessage'))
     <div class="alert alert-danger">
         {{ session('errorMessage') }}
     </div>
     @endif
-
 
     <form id="quickForm" method="POST" action="{{ route('admin.posts.update') }}" enctype="multipart/form-data">
         @csrf
@@ -33,12 +29,12 @@
         <div class="card-body">
             <div class="form-group">
                 <label for="title">Title</label><span style="color:red; font-size:large"> *</span>
-                <input style="width:auto;" type="text" value="{{ $post->title ?? '' }}" name="title" class="form-control" id="title" placeholder="Title" required>
+                <input type="text" value="{{ $post->title ?? '' }}" name="title" class="form-control" id="title" placeholder="Title" required>
             </div>
            
-            <div>
+            <div class="form-group">
                 <label for="registration_date">Description</label><span style="color:red; font-size:large"> *</span>
-                <textarea style="max-width: 30%;" type="text" class="form-control" name="description" id="description" placeholder="Add Description" required>{!! $post->description ?? '' !!}</textarea>
+                <textarea  type="text" class="form-control" name="description" id="description" placeholder="Add Description" required>{!! $post->description ?? '' !!}</textarea>
             </div>
            
             <div class="form-group">
@@ -46,26 +42,74 @@
                 <input type="text" name="tags" value="{{ $post->tags ?? '' }}" class="form-control" id="address" placeholder="Tags">
             </div>
            
-            <div class="form-group">
-                <label for="taxpayer_name">Content</label><span style="color:red; font-size:large"> *</span>
-                <textarea style="max-width: 100%;min-height: 250px;" type="text" class="form-control" id="myTextarea" name="content" placeholder="Add Description">{!! $post->content ?? '' !!}</textarea>
-            </div>
+           <!-- Content Input with TinyMCE -->
+           <div class="form-group">
+            <label for="taxpayer_name">Content</label><span style="color:red; font-size:large"> *</span>
+            <textarea style="max-width: 100%;min-height: 250px;" type="text" class="form-control" id="myTextarea" name="content" placeholder="Add Description">{!! $post->content ?? '' !!}</textarea>
+        </div>
 
+        <!-- Content Images Display -->
+        <div class="form-group">
+            <label>Images in Content</label>
+            <div id="contentImages" class="row mb-3">
+                @php
+                    // Extract images from content using a regex
+                    preg_match_all('/<img[^>]+src="([^">]+)"/', $post->content, $matches);
+                    $contentImages = $matches[1] ?? [];
+                @endphp
 
-            <!-- Current Images Display -->
-            <div class="form-group">
-                <label>Current Images</label>
-                <div id="currentImages" class="row mb-3">
-                    @if($post->image)
-                        @foreach(json_decode($post->image) as $index => $image)
-                        <div class="col-md-2 mb-3 current-image">
+                @if(!empty($contentImages))
+                    @foreach($contentImages as $index => $image)
+                        <div class="col-md-2 mb-3 content-image">
                             <div class="position-relative">
-                                <img src="{{ asset($image) }}" class="img-fluid rounded" alt="Current Image">
-                                <input type="hidden" name="existing_images[]" value="{{ $image }}">
-                               
+                                <img src="{{ $image }}" class="img-fluid rounded" alt="Content Image">
+                                <input type="hidden" name="content_images[]" value="{{ $image }}">
+                                <button type="button" class="btn btn-danger btn-sm position-absolute" 
+                                        style="top: 5px; right: 5px;" 
+                                        onclick="removeContentImage(this, '{{ $image }}')">
+                                    <i class="fas fa-times"></i>
+                                </button>
                             </div>
                         </div>
-                        @endforeach
+                    @endforeach
+                @else
+                    <p>No images found in content</p>
+                @endif
+            </div>
+        </div>
+
+
+            <div class="form-group">
+                <label>Current Post Images</label>
+                <div id="currentImages" class="row mb-3">
+                    @if($post->image)
+                        @php
+                            $images = is_string($post->image) 
+                                ? (strpos($post->image, ',') !== false 
+                                    ? explode(',', $post->image) 
+                                    : [$post->image]) 
+                                : (array)$post->image;
+                        @endphp
+
+                        @if(!empty($images))
+                            @foreach($images as $index => $image)
+                                <div class="col-md-2 mb-3 current-image">
+                                    <div class="position-relative">
+                                        <img src="{{ asset('uploads/post/' . trim($image)) }}" class="img-fluid rounded" alt="Current Image">
+                                        <input type="hidden" name="existing_images[]" value="{{ trim($image) }}">
+                                        <button type="button" class="btn btn-danger btn-sm position-absolute" 
+                                                style="top: 5px; right: 5px;" 
+                                                onclick="removeCurrentImage(this, '{{ trim($image) }}')">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <p>No images found</p>
+                        @endif
+                    @else
+                        <p>No images found</p>
                     @endif
                 </div>
             </div>
@@ -203,7 +247,22 @@
            
             fileInput.files = dt.files;
         };
+         const removeContentImage = (button, imageSrc) => {
+            const container = button.closest('.content-image');
+            container.remove();
+           
+            // Optional: If you want to track removed content images
+            const form = document.getElementById('quickForm');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'removed_content_images[]';
+            input.value = imageSrc;
+            form.appendChild(input);
 
+            // Optional: Remove image from content
+            const content = document.getElementById('myTextarea');
+            content.value = content.value.replace(new RegExp(`<img[^>]+src="${imageSrc}"[^>]*>`, 'g'), '');
+        };
 
         // Initialize TinyMCE
         tinymce.init({
